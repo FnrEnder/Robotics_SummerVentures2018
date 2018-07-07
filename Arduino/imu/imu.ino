@@ -8,6 +8,9 @@
 #define GYRO_XOUT 0x43
 #define GYRO_YOUT 0x45
 #define GYRO_ZOUT 0x47
+float rollGyro=0;
+float Alpha = .995;
+float rollAcc = 0;
 
 const double pi = 3.14159265358979;
 const double gyro_deg2rad = 500.0 * pi / 5898240.0;
@@ -24,6 +27,8 @@ byte gyro_address[] = {GYRO_XOUT, GYRO_YOUT, GYRO_ZOUT};
 
 double roll, pitch, rollRate, pitchRate, rollAngle, pitchAngle, dt;
 
+
+
 void setup() 
 {
   Wire.begin();
@@ -36,12 +41,40 @@ void setup()
   //Serial.println(device_id == 0x71 ? "Communication with MPU9255 successful" : "MPU9255 not found");
   //while(!(device_id == 0x71));
 
+
+  Wire.beginTransmission(MPU9255_ADDRESS);
+  Wire.write(0x6B);
+  Wire.write(0x00);
+  error=Wire.endTransmission();
+
+Wire.beginTransmission(MPU9255_ADDRESS);
+  Wire.write(0x6C);
+  Wire.write(0x00);
+  error=Wire.endTransmission();
+
+
   dt = micros();
 }
 
 void loop() 
 {
-
+for(i;i<3;i++){
+  a[i] = read(MPU9255_ADDRESS,acc_address[i],2);
+  g[i] = read(MPU9255_ADDRESS,gyro_address[i],2);
+  //Serial.print(a[0]); Serial.print(" ");
+  //Serial.print(a[1]); Serial.print(" ");
+  //Serial.println(a[2]);
+  //Serial.print(g[0]); Serial.print(" ");
+  //Serial.print(g[1]); Serial.print(" ");
+  //Serial.println(g[2]);
+}
+rollRate = g[1]*gyro_deg2rad;
+rollAcc=atan2(a[0],a[2]);
+rollGyro = rollGyro+(rollRate*(micros()-dt))/1000000;
+rollAngle=Alpha*(rollAngle+(rollRate*(micros()-dt))/1000000)+(1-Alpha)*rollAcc;
+Serial.println(rollAngle*180.0/pi);
+i=0;
+dt=micros();
 }
 
 int16_t read(byte deviceAddress, byte valueAddress, int bytesToRead)
